@@ -1,19 +1,25 @@
 package commonsubset
 
-import "sync"
+import (
+	"sync"
+
+	binaryagreement "github.com/EncrypteDL/HoneyBadgerBFT-Golang/Binary_Agreement"
+	reliablebroadcast "github.com/EncrypteDL/HoneyBadgerBFT-Golang/Reliable_Broadcast"
+	"github.com/sirupsen/logrus"
+)
 
 type CommonSubset struct {
 	ordererIndex int
 	total        int
 	tolerance    int
-	rbc          []*ReliableBroadcast
-	aba          []*BinaryAgreement
+	rbc          []*reliablebroadcast.ReliableBroadcast
+	aba          []*binaryagreement.BinaryAgreement
 	lock         sync.Mutex
 	In           chan []byte
 	Out          chan [][]byte
 }
 
-func NewCommonSubset(ordererIndex int, total int, tolerance int, rbc []*ReliableBroadcast, aba []*BinaryAgreement) (result *CommonSubset) {
+func NewCommonSubset(ordererIndex int, total int, tolerance int, rbc []*reliablebroadcast.ReliableBroadcast, aba []*binaryagreement.BinaryAgreement) (result *CommonSubset) {
 	result = &CommonSubset{
 		ordererIndex: ordererIndex,
 		total:        total,
@@ -44,7 +50,7 @@ func (acs *CommonSubset) commonSubsetService() {
 	receiveRBC := func(instanceIndex int) {
 		select {
 		case <-killRBC[instanceIndex]:
-			logger.Debugf("killed RBC[%v]", instanceIndex)
+			logrus.Debugf("killed RBC[%v]", instanceIndex)
 			return
 		case data := <-acs.rbc[instanceIndex].Out:
 			acs.lock.Lock()
@@ -80,7 +86,7 @@ func (acs *CommonSubset) commonSubsetService() {
 			for index, aba := range acs.aba {
 				if !abaInputted[index] {
 					aba.In <- false
-					logger.Debugf("ACS putting false as no RBC")
+					logrus.Debugf("ACS putting false as no RBC")
 					abaInputted[index] = true
 				}
 			}
@@ -95,7 +101,7 @@ func (acs *CommonSubset) commonSubsetService() {
 		<-joinABA
 		// close(acsInstance.exitRecv)
 	}
-	logger.Debugf("EVERY BODY JOINED")
+	logrus.Debugf("EVERY BODY JOINED")
 
 	for index, abaOutput := range abaOutputs {
 		//
@@ -110,7 +116,7 @@ func (acs *CommonSubset) commonSubsetService() {
 
 			// <-joinRBC[index]
 			killRBC[index] <- nil
-			logger.Debugf("kill signal sent RBC[%v]", index)
+			logrus.Debugf("kill signal sent RBC[%v]", index)
 			rbcOutputs[index] = nil
 		}
 	}
@@ -118,11 +124,11 @@ func (acs *CommonSubset) commonSubsetService() {
 	for _, v := range rbcOutputs {
 		if v != nil {
 			avaliableCount++
-			logger.Debugf("OUT::  %v", v)
+			logrus.Debugf("OUT::  %v", v)
 		}
 
 	}
-	logger.Debugf("ACS output: [][]byte(len=%v,aval=%v)", len(rbcOutputs), avaliableCount)
+	logrus.Debugf("ACS output: [][]byte(len=%v,aval=%v)", len(rbcOutputs), avaliableCount)
 	acs.Out <- rbcOutputs
 
 }
