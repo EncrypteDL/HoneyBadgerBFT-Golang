@@ -3,6 +3,13 @@ A educational / research implementation of the HoneyBadgerBFT algorithm written 
 
 ## Getting started 
 
+```
+$ cd $HOME
+$ mkdir code
+$ cd code
+$ git clone https://github.com/EncrypteDL/HoneyBadgerBFT-Golang.git
+$ cd HoneyBadgerBFT-Golang
+```
 
 ## Official Documentation
 
